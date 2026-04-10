@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: azure-todo-app
+    env_file:
+      - .env
+    environment:
+      PORT: 8080
+    ports:
+      - "3000:8080"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

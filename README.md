@@ -107,6 +107,36 @@ Les taches sont alors stockees dans `data/tasks.json`.
 
 ## Docker
 
+### Lancement standard avec Docker Compose
+
+1. Copier le fichier d'environnement :
+
+```powershell
+Copy-Item .env.example .env
+```
+
+2. Verifier au minimum :
+
+```env
+USE_FILE_STORAGE=true
+PORT=3000
+```
+
+3. Lancer l'application :
+
+```powershell
+docker compose up --build
+```
+
+Application accessible sur `http://localhost:3000`
+
+Notes :
+
+- `compose.yaml` force `PORT=8080` dans le conteneur et publie `3000:8080` ;
+- le dossier local `data/` est monte dans le conteneur pour conserver les taches ;
+- pour lancer en arriere-plan : `docker compose up --build -d` ;
+- pour arreter : `docker compose down`.
+
 ### Build local
 
 ```powershell
