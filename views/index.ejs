@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Azure App Service + Cosmos DB + Key Vault + Blob Storage</p>
+        <h1><%= title %></h1>
+        <p class="lead">
+          Application TODO minimale pour une demonstration cloud avec conteneur, persistance, secrets et stockage objet.
+        </p>
+        <div class="badges">
+          <span>Stockage: <strong><%= status.storageMode %></strong></span>
+          <span>Blob: <strong><%= status.blobConfigured ? "configure" : "non configure" %></strong></span>
+        </div>
+      </section>
+
+      <% if (message) { %>
+        <div class="alert success"><%= message %></div>
+      <% } %>
+
+      <% if (error) { %>
+        <div class="alert error"><%= error %></div>
+      <% } %>
+
+      <section class="panel composer">
+        <form action="/tasks" method="post" class="task-form">
+          <label for="title">Nouvelle tache</label>
+          <div class="row">
+            <input id="title" name="title" type="text" placeholder="Preparer la demo Azure" maxlength="120" required />
+            <button type="submit">Ajouter</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Taches</h2>
+            <span><%= tasks.length %> element(s)</span>
+          </div>
+
+          <% if (tasks.length === 0) { %>
+            <p class="empty">Aucune tache pour le moment.</p>
+          <% } %>
+
+          <ul class="task-list">
+            <% tasks.forEach((task) => { %>
+              <li class="task <%= task.status === 'done' ? 'done' : '' %>">
+                <div>
+                  <strong><%= task.title %></strong>
+                  <p>Etat: <%= task.status %></p>
+                </div>
+                <div class="task-actions">
+                  <form action="/tasks/<%= task.id %>/toggle" method="post">
+                    <button type="submit"><%= task.status === "done" ? "Rouvrir" : "Terminer" %></button>
+                  </form>
+                  <form action="/tasks/<%= task.id %>/delete" method="post">
+                    <button type="submit" class="secondary">Supprimer</button>
+                  </form>
+                </div>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Blob Storage</h2>
+            <span>Export JSON</span>
+          </div>
+
+          <form action="/exports" method="post" class="stack">
+            <p>Depose un export JSON des taches dans un blob container Azure.</p>
+            <button type="submit">Exporter les taches</button>
+          </form>
+
+          <ul class="export-list">
+            <% exports.forEach((file) => { %>
+              <li>
+                <a href="<%= file.url %>" target="_blank" rel="noreferrer"><%= file.name %></a>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
