@@ -61,6 +61,21 @@ flowchart LR
 - 1 Storage Account
 - 1 Blob container
 
+### Ressources creees pour la demonstration
+
+- Resource Group : `rg-todo-demo-2604101022`
+- Azure Container Registry : `acrtododemo2604101022`
+- App Service Plan Linux : `plan-todo-demo-2604101022-a`
+- Web App for Containers : `apptododemo2604101022`
+- Deployment slot : `staging`
+- Azure Cosmos DB account : `cosmostododemo2604101022`
+- Cosmos DB database : `todo-app-db`
+- Cosmos DB container : `tasks`
+- Key Vault : `kvtododemo2604101022`
+- Secret : `cosmos-key`
+- Storage Account : `stododemo2604101022`
+- Blob container : `exports`
+
 ## Variables d'environnement
 
 Copier `.env.example` vers `.env` pour le local.
@@ -106,36 +121,6 @@ Application accessible sur `http://localhost:3000`
 Les taches sont alors stockees dans `data/tasks.json`.
 
 ## Docker
-
-### Lancement standard avec Docker Compose
-
-1. Copier le fichier d'environnement :
-
-```powershell
-Copy-Item .env.example .env
-```
-
-2. Verifier au minimum :
-
-```env
-USE_FILE_STORAGE=true
-PORT=3000
-```
-
-3. Lancer l'application :
-
-```powershell
-docker compose up --build
-```
-
-Application accessible sur `http://localhost:3000`
-
-Notes :
-
-- `compose.yaml` force `PORT=8080` dans le conteneur et publie `3000:8080` ;
-- le dossier local `data/` est monte dans le conteneur pour conserver les taches ;
-- pour lancer en arriere-plan : `docker compose up --build -d` ;
-- pour arreter : `docker compose down`.
 
 ### Build local
 
@@ -207,14 +192,15 @@ La mise a l'echelle manuelle sur le plan App Service permet :
 Exemple complet a adapter :
 
 ```powershell
-$RESOURCE_GROUP="rg-todo-demo"
-$LOCATION="francecentral"
-$ACR_NAME="acrtododemo1234"
-$PLAN_NAME="plan-todo-demo"
-$WEBAPP_NAME="app-todo-demo-1234"
-$COSMOS_NAME="cosmos-todo-demo-1234"
-$KEYVAULT_NAME="kv-todo-demo-1234"
-$STORAGE_NAME="stododemo1234"
+$RESOURCE_GROUP="rg-todo-demo-2604101022"
+$LOCATION="switzerlandnorth"
+$PLAN_LOCATION="swedencentral"
+$ACR_NAME="acrtododemo2604101022"
+$PLAN_NAME="plan-todo-demo-2604101022-a"
+$WEBAPP_NAME="apptododemo2604101022"
+$COSMOS_NAME="cosmostododemo2604101022"
+$KEYVAULT_NAME="kvtododemo2604101022"
+$STORAGE_NAME="stododemo2604101022"
 $IMAGE_NAME="azure-todo-app:v1"
 ```
 
@@ -273,8 +259,8 @@ az storage account show-connection-string --name $STORAGE_NAME --resource-group 
 ### App Service Plan et Web App for Containers
 
 ```powershell
-az appservice plan create --name $PLAN_NAME --resource-group $RESOURCE_GROUP --is-linux --sku B1
-az webapp create --resource-group $RESOURCE_GROUP --plan $PLAN_NAME --name $WEBAPP_NAME --deployment-container-image-name "$ACR_NAME.azurecr.io/azure-todo-app:v1"
+az appservice plan create --name $PLAN_NAME --resource-group $RESOURCE_GROUP --is-linux --sku S1 --location "Sweden Central"
+az webapp create --resource-group $RESOURCE_GROUP --plan $PLAN_NAME --name $WEBAPP_NAME --container-image-name "$ACR_NAME.azurecr.io/azure-todo-app:v1" --container-registry-url "https://$ACR_NAME.azurecr.io"
 ```
 
 ### Autoriser le pull depuis ACR
@@ -317,9 +303,15 @@ az webapp config appsettings set --resource-group $RESOURCE_GROUP --name $WEBAPP
 ### Configurer ACR sur la Web App
 
 ```powershell
+az acr update -n $ACR_NAME --admin-enabled true
+$ACR_USER=$(az acr credential show -n $ACR_NAME --query username -o tsv)
+$ACR_PASS=$(az acr credential show -n $ACR_NAME --query passwords[0].value -o tsv)
+
 az webapp config container set --name $WEBAPP_NAME --resource-group $RESOURCE_GROUP `
   --container-image-name "$ACR_NAME.azurecr.io/azure-todo-app:v1" `
-  --container-registry-url "https://$ACR_NAME.azurecr.io"
+  --container-registry-url "https://$ACR_NAME.azurecr.io" `
+  --container-registry-user $ACR_USER `
+  --container-registry-password $ACR_PASS
 ```
 
 ### Deployment slot
@@ -344,10 +336,8 @@ az webapp show --resource-group $RESOURCE_GROUP --name $WEBAPP_NAME --query defa
 
 ## URL de l'application
 
-A renseigner apres deploiement :
-
-- production : `https://<webapp>.azurewebsites.net`
-- staging : `https://<webapp>-staging.azurewebsites.net`
+- production : `https://apptododemo2604101022.azurewebsites.net`
+- staging : `https://apptododemo2604101022-staging.azurewebsites.net`
 
 ## Ecrans Azure Portal a montrer pendant la demo
 
@@ -366,7 +356,11 @@ A renseigner apres deploiement :
 - pour l'environnement local sans Azure, l'application utilise un stockage fichier ;
 - l'ouverture directe des URLs de blobs depend de la configuration d'acces du conteneur ;
 - le build Docker et le push ACR doivent etre testes sur une machine disposant de Docker ;
-- en Azure, il faut attendre quelques secondes apres certaines affectations de roles.
+- en Azure, il faut attendre quelques secondes apres certaines affectations de roles ;
+- le deploiement a ete soumis a une policy de regions autorisees ;
+- le plan App Service n'a pas pu etre cree dans `switzerlandnorth` a cause d'un throttling, il a donc ete cree en `swedencentral` ;
+- le Key Vault est configure en mode RBAC, il faut donc affecter explicitement les roles pour lire et ecrire les secrets ;
+- la premiere reponse HTTP de la Web App peut etre un peu lente juste apres un redemarrage de conteneur.
 
 ## Structure du projet
 
